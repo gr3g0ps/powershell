@@ -1,0 +1,11 @@
+$groupname = "groupname”
+$apps = Get-AzWebApp -ResourceGroupName $groupname
+$names = $apps.Name
+foreach($name in $names){
+    $tls = (Get-AzWebApp -ResourceGroupName $groupname -Name $name).SiteConfig.MinTlsVersion
+
+if ($tls -eq “1.1” -Or  $tls -eq “1.0”) {
+
+    Write-Host "minTlsVersion of web app" $name "is" $tls
+}
+}
