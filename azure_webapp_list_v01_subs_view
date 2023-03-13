@@ -6,10 +6,9 @@ $data = foreach ($sub in $Subscriptions) {
     Write-Host Working with Subscription $sub.Name 
     $null = Get-AzSubscription -SubscriptionName $sub.Name | Set-AzContext
     # let Select-Object output the objects that will be collected in variable $data
-    Get-AzWebApp | select-object SiteName, DefaultHostName, ResourceGroup,
-											@{Name = 'TLSVersion'; Expression = {$_.SiteConfig.MinTlsVersion}}
+    Get-AzStorageAccount | Select-Object StorageAccountName, ResourceGroupName,@{Name = 'TLSVersion'; Expression = {$_.MinimumTlsVersion}}
 
 }
 
 # write a CSV file containing this data
-$data | Export-Csv -Path C:\AzureWebApp\export13032023.csv -NoTypeInformation
+$data | Export-Csv -Path C:\AzureStorage\export13032023_v2.csv -NoTypeInformation
