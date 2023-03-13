@@ -1,0 +1,15 @@
+#Connect-AzAccount -DeviceCode
+
+$Subscriptions = Get-AzSubscription
+$data = foreach ($sub in $Subscriptions) {
+    # suppress output on this line
+    Write-Host Working with Subscription $sub.Name 
+    $null = Get-AzSubscription -SubscriptionName $sub.Name | Set-AzContext
+    # let Select-Object output the objects that will be collected in variable $data
+    Get-AzWebApp | select-object SiteName, DefaultHostName, ResourceGroup,
+											@{Name = 'TLSVersion'; Expression = {$_.SiteConfig.MinTlsVersion}}
+
+}
+
+# write a CSV file containing this data
+$data | Export-Csv -Path C:\AzureWebApp\export13032023.csv -NoTypeInformation
