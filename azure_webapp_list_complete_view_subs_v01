@@ -1,0 +1,18 @@
+#$subIds = 'a8157933-ZZZZ-XXXX-b4c6-49a82d894a17'
+#$subIds = Get-AzSubscription | Select-Object -ExpandProperty Id
+
+$array=@()
+foreach ($subId in $subIds) 
+{    
+Set-AzContext -Subscription $subId | Out-null    
+$webapps = get-azwebapp
+foreach ($webapp in $webapps) {     
+          $Name = $webapp.Name       
+          $DefaultHost = $webapp.DefaultHostName        
+          $Hostname = [string]$webapp.HostNames
+          $RG = $webapp.ResourceGroup
+          $tls = (Get-AzWebApp -Name $Name).SiteConfig.MinTlsVersion
+          $Properties=[ordered]@{'Sub'=$subId;'RG'=$RG;'WebApp'=$Name;'Hostname'=$Hostname;'DefaultHost'=$DefaultHost;'TLS'=$tls} 
+          $array += New-Object -TypeName PSObject -Property $Properties 
+      }       
+}$array | Export-Csv -Path "C:\Management\webapp.csv" -NoTypeInformation
