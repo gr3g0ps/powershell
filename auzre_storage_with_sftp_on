@@ -31,4 +31,4 @@ foreach ($subscription in $subscriptions) {
 }
 
 # Export results to CSV file
-$results | Export-Csv -Path "c:\temp\tlstrue.csv" -NoTypeInformation
+$results | Export-Csv -Path "c:\temp\sftptrue.csv" -NoTypeInformation
