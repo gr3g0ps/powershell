@@ -1,4 +1,5 @@
 #To show Azure storage accounts with EnableSftp set to $true on all subscriptions and export the results to a CSV file named tlstrue.csv
+#By gr3g0ps 04.2023 v.0001
 
 # Login to Azure account
 Connect-AzAccount
@@ -32,3 +33,4 @@ foreach ($subscription in $subscriptions) {
 
 # Export results to CSV file
 $results | Export-Csv -Path "c:\temp\sftptrue.csv" -NoTypeInformation
+
