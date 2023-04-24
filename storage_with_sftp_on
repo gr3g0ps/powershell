@@ -1,0 +1,34 @@
+#To show Azure storage accounts with EnableSftp set to $true on all subscriptions and export the results to a CSV file named tlstrue.csv
+
+# Login to Azure account
+Connect-AzAccount
+
+# Get all subscriptions
+$subscriptions = Get-AzSubscription
+
+# Create an empty array to store the results
+$results = @()
+
+# Loop through subscriptions
+foreach ($subscription in $subscriptions) {
+    # Set current subscription context
+    Set-AzContext -Subscription $subscription.Id
+
+    # Get all storage accounts in current subscription
+    $storageAccounts = Get-AzStorageAccount -SkuName Standard_RAGRS
+
+    # Loop through storage accounts and check if EnableSftp is true
+    foreach ($storageAccount in $storageAccounts) {
+        if ($storageAccount.EnableSftp) {
+            $result = [PSCustomObject]@{
+                SubscriptionName = $subscription.Name
+                StorageAccountName = $storageAccount.StorageAccountName
+                EnableSftp = $storageAccount.EnableSftp
+            }
+            $results += $result
+        }
+    }
+}
+
+# Export results to CSV file
+$results | Export-Csv -Path "c:\temp\tlstrue.csv" -NoTypeInformation
