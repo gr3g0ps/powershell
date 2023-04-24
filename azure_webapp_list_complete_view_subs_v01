@@ -1,4 +1,4 @@
-#$subIds = 'a8157933-ZZZZ-XXXX-b4c6-49a82d894a17'
+#$subIds = 'a888888-ZZZZ-XXXX-b4c6-88a88d894a88'
 #$subIds = Get-AzSubscription | Select-Object -ExpandProperty Id
 
 $array=@()
