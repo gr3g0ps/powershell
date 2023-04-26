@@ -1,0 +1,32 @@
+#PowerShell script that creates a new Network Security Group (NSG) in Azure and adds an inbound rule to allow all ports from IP address 192.168.1.1:
+
+# Connect to your Azure account
+Connect-AzAccount
+
+# Set the Azure subscription context to the appropriate subscription
+Select-AzSubscription -SubscriptionName "YourSubscriptionName"
+
+# Define the resource group name, NSG name, and location
+$resourceGroupName = "YourResourceGroupName"
+$nsgName = "YourNSGName"
+$location = "YourLocation"
+
+# Create a new NSG
+$nsg = New-AzNetworkSecurityGroup -ResourceGroupName $resourceGroupName -Name $nsgName -Location $location
+
+# Define the inbound security rule parameters
+$ruleName = "AllowAllPorts"
+$priority = 100
+$sourceAddressPrefix = "192.168.1.1/32"
+$destinationAddressPrefix = "*"
+$protocol = "*"
+$access = "Allow"
+
+# Create a new inbound security rule
+$rule = New-AzNetworkSecurityRuleConfig -Name $ruleName -Priority $priority -SourceAddressPrefix $sourceAddressPrefix -DestinationAddressPrefix $destinationAddressPrefix -Protocol $protocol -Access $access
+
+# Add the inbound security rule to the NSG
+$nsg = Add-AzNetworkSecurityRuleConfig -NetworkSecurityGroup $nsg -SecurityRule $rule
+
+# Update the NSG
+Set-AzNetworkSecurityGroup -NetworkSecurityGroup $nsg
