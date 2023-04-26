@@ -1,0 +1,58 @@
+# Connect to your Azure account
+Connect-AzAccount
+
+# Get all Azure subscriptions
+$subList = Get-AzSubscription
+
+# Define the resource group name keyword and NSG name
+$resourceGroupKeyword = "VNET"
+$nsgName = "YourNSGName"
+
+# Loop through each subscription and create a new NSG
+foreach ($sub in $subList) {
+    Select-AzSubscription -SubscriptionId $sub.Id
+
+    # Get all resource groups that contain the keyword in their name
+    $rgList = Get-AzResourceGroup | Where-Object { $_.ResourceGroupName -like "*$resourceGroupKeyword*" }
+
+    # Loop through each resource group and create a new NSG
+    foreach ($rg in $rgList) {
+        # Define the location for the NSG based on the resource group
+        $location = $rg.Location
+
+        # Create a new NSG
+        $nsg = New-AzNetworkSecurityGroup -ResourceGroupName $rg.ResourceGroupName -Name $nsgName -Location $location
+
+        # Define the inbound security rule parameters for the first rule
+        $ruleName1 = "AllowAllPorts"
+        $priority1 = 100
+        $sourceAddressPrefix1 = "192.168.1.1/32"
+        $destinationAddressPrefix1 = "*"
+        $protocol1 = "*"
+        $access1 = "Allow"
+
+        # Create a new inbound security rule for the first rule
+        $rule1 = New-AzNetworkSecurityRuleConfig -Name $ruleName1 -Priority $priority1 -SourceAddressPrefix $sourceAddressPrefix1 -DestinationAddressPrefix $destinationAddressPrefix1 -Protocol $protocol1 -Access $access1
+
+        # Add the first inbound security rule to the NSG
+        $nsg = Add-AzNetworkSecurityRuleConfig -NetworkSecurityGroup $nsg -SecurityRule $rule1
+
+        # Define the inbound security rule parameters for the second rule
+        $ruleName2 = "AllowPort22"
+        $priority2 = 101
+        $sourceAddressPrefix2 = "192.168.1.10/32"
+        $destinationAddressPrefix2 = "*"
+        $protocol2 = "TCP"
+        $destinationPortRange2 = "22"
+        $access2 = "Allow"
+
+        # Create a new inbound security rule for the second rule
+        $rule2 = New-AzNetworkSecurityRuleConfig -Name $ruleName2 -Priority $priority2 -SourceAddressPrefix $sourceAddressPrefix2 -DestinationAddressPrefix $destinationAddressPrefix2 -Protocol $protocol2 -DestinationPortRange $destinationPortRange2 -Access $access2
+
+        # Add the second inbound security rule to the NSG
+        $nsg = Add-AzNetworkSecurityRuleConfig -NetworkSecurityGroup $nsg -SecurityRule $rule2
+
+        # Update the NSG
+        Set-AzNetworkSecurityGroup -NetworkSecurityGroup $nsg
+    }
+}
