@@ -1,0 +1,31 @@
+#
+1) Connect to your Azure account using the Connect-AzAccount cmdlet. Enter your credentials when prompted.
+#
+2) Set the Azure subscription context to the appropriate subscription using the Select-AzSubscription cmdlet.
+#
+3) Create a new NSG using the New-AzNetworkSecurityGroup cmdlet. Specify the resource group name and the NSG name.
+
+#PowerShell
+
+$resourceGroupName = "YourResourceGroupName"
+$nsgName = "YourNSGName"
+$location = "YourLocation"
+$nsg = New-AzNetworkSecurityGroup -ResourceGroupName $resourceGroupName -Name $nsgName -Location $location
+
+4) Create a new inbound security rule using the New-AzNetworkSecurityRuleConfig cmdlet. Specify the rule name, priority, source address prefix, destination address prefix, protocol, and access.
+
+$ruleName = "AllowAllPorts"
+$priority = 100
+$sourceAddressPrefix = "192.168.1.1/32"
+$destinationAddressPrefix = "*"
+$protocol = "*"
+$access = "Allow"
+$rule = New-AzNetworkSecurityRuleConfig -Name $ruleName -Priority $priority -SourceAddressPrefix $sourceAddressPrefix -DestinationAddressPrefix $destinationAddressPrefix -Protocol $protocol -Access $access
+
+5) Add the inbound security rule to the NSG using the Add-AzNetworkSecurityRuleConfig cmdlet.
+
+$nsg = Add-AzNetworkSecurityRuleConfig -NetworkSecurityGroup $nsg -SecurityRule $rule
+
+5) Update the NSG using the Set-AzNetworkSecurityGroup cmdlet.
+
+Set-AzNetworkSecurityGroup -NetworkSecurityGroup $nsg
