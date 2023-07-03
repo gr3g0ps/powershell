@@ -1,0 +1,36 @@
+# Connect to Azure
+Connect-AzAccount
+
+# Get all subscriptions
+$subscriptions = Get-AzSubscription
+
+# Iterate through each subscription
+foreach ($subscription in $subscriptions) {
+    Set-AzContext -Subscription $subscription.Id
+
+    # Get all virtual networks in the subscription
+    $vnetList = Get-AzVirtualNetwork
+
+    # Iterate through each virtual network
+    foreach ($vnet in $vnetList) {
+        Write-Output "Subscription: $($subscription.Name)"
+        Write-Output "Virtual Network: $($vnet.Name)"
+        Write-Output ""
+
+        # Get all subnets within the virtual network
+        $subnets = Get-AzVirtualNetworkSubnetConfig -VirtualNetwork $vnet
+
+        # Iterate through each subnet
+        foreach ($subnet in $subnets) {
+            # Get the devices connected to the subnet
+            $devices = Get-AzNetworkInterface -VirtualNetwork $vnet -Subnet $subnet.Name
+
+            # Iterate through each device
+            foreach ($device in $devices) {
+                Write-Output "Device: $($device.Name)"
+                Write-Output "Private IP: $($device.IpConfigurations.PrivateIpAddress)"
+                Write-Output ""
+            }
+        }
+    }
+}
