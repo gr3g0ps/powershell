@@ -34,3 +34,18 @@ foreach ($subscription in $subscriptions) {
         }
     }
 }
+
+
+
+# The script uses the Connect-AzAccount cmdlet to authenticate and connect to Azure.
+# It retrieves all subscriptions using the Get-AzSubscription cmdlet.
+# The script then iterates through each subscription.
+# For each subscription, it sets the Azure context using Set-AzContext.
+# It retrieves all virtual networks within the subscription using Get-AzVirtualNetwork.
+# The script then iterates through each virtual network.
+# Within each virtual network, it retrieves all subnets using Get-AzVirtualNetworkSubnetConfig.
+# It iterates through each subnet and retrieves the devices connected to that subnet using Get-AzNetworkInterface.
+# For each device, it outputs the device name and the corresponding private IP address.
+# The output includes the subscription name, virtual network name, device name, and private IP address for connected devices.
+# Make sure you have the Az module installed and updated in your PowerShell environment before running the script. 
+# You can install the Az module by running the command Install-Module -Name Az -AllowClobber -Scope CurrentUser in PowerShell.
