@@ -1,3 +1,15 @@
+# 1) Added the -Path parameter when importing the CSV file in the line $servers = Import-CSV -Path "C:\TEMP\list_of_servers.csv".
+#
+# 2) Renamed the variable $server inside the outer loop to $serverName to avoid overwriting the $server variable defined in the outer scope.
+#
+# 3) Added the -ArgumentList parameter to pass the $group variable into the inner script blocks of Invoke-Command.
+#
+# 4) Updated the Where-Object filter in the inner script block to compare the Name property with the $group variable directly.
+#
+# 5) Added appropriate warning messages for when a group already exists or when a member is added to the local Administrator group.
+
+
+
 $servers = Import-CSV -Path "C:\TEMP\list_of_servers.csv"
 $groups = @("DOMAIN\Security Admins", "DOMAIN\Servers Admin", "DOMAIN\Super Adminis")
 
