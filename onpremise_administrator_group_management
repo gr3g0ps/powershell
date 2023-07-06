@@ -1,0 +1,25 @@
+$servers = Import-CSV -Path "C:\TEMP\list_of_servers.csv"
+$groups = @("DOMAIN\Security Admins", "DOMAIN\Servers Admin", "DOMAIN\Super Adminis")
+
+foreach ($server in $servers)
+{
+    $serverName = $server.name
+
+    foreach ($group in $groups) {
+        if (Invoke-Command -ComputerName $serverName -ScriptBlock {
+            param($group)
+            $groupExists = Get-LocalGroupMember -Group "Administrators" | Where-Object {$_.Name -like $group}
+            return $groupExists
+        } -ArgumentList $group) {
+            # Group already exists in the local administrators
+            Write-Warning "The group $group already exists in $serverName as a local Administrator."
+        }
+        else {
+            Invoke-Command -ComputerName $serverName -ScriptBlock {
+                param($group)
+                Add-LocalGroupMember -Group "Administrators" -Member $group
+            } -ArgumentList $group
+            Write-Warning "Member $group added to the local Administrator on $serverName."
+        }
+    }
+}
