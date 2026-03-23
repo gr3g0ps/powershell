@@ -1,0 +1,58 @@
+# Get all ENABLED subscriptions in the tenant
+$subscriptions = Get-AzSubscription | Where-Object { $_.State -eq "Enabled" }
+
+# Display numbered list of subscriptions
+Write-Host "`nAvailable Subscriptions:" -ForegroundColor Cyan
+$i = 1
+foreach ($sub in $subscriptions) {
+    Write-Host "  [$i] $($sub.Name) ($($sub.Id))"
+    $i++
+}
+
+# Prompt user to pick one or all
+Write-Host "`n  [0] ALL Subscriptions" -ForegroundColor Yellow
+$choice = Read-Host "`nEnter number"
+
+# Validate input
+if ($choice -match '^\d+$' -and [int]$choice -ge 0 -and [int]$choice -le $subscriptions.Count) {
+    if ($choice -eq "0") {
+        $selectedSubs = $subscriptions
+        Write-Host "`nRunning on ALL subscriptions...`n" -ForegroundColor Yellow
+    } else {
+        $selectedSubs = $subscriptions[[int]$choice - 1]
+        Write-Host "`nRunning on: $($selectedSubs.Name)`n" -ForegroundColor Green
+    }
+} else {
+    Write-Host "Invalid choice. Exiting." -ForegroundColor Red
+    exit
+}
+
+$results = @()
+
+foreach ($sub in $selectedSubs) {
+    # Switch context to each subscription
+    Set-AzContext -SubscriptionId $sub.Id | Out-Null
+
+    # Get all VNETs in the subscription
+    $vnets = Get-AzVirtualNetwork
+
+    foreach ($vnet in $vnets) {
+        $dnsServers = $vnet.DhcpOptions.DnsServers
+
+        $results += [PSCustomObject]@{
+            SubscriptionName = $sub.Name
+            SubscriptionId   = $sub.Id
+            ResourceGroup    = $vnet.ResourceGroupName
+            VNetName         = $vnet.Name
+            Location         = $vnet.Location
+            DNSType          = if ($dnsServers.Count -eq 0) { "Azure Default DNS" } else { "Custom DNS" }
+            DNSServers       = if ($dnsServers.Count -eq 0) { "168.63.129.16 (Azure)" } else { $dnsServers -join ", " }
+        }
+    }
+}
+
+# Display results
+$results | Format-Table -AutoSize
+
+# Optional: Export to CSV
+# $results | Export-Csv -Path ".\VNet_DNS_Settings.csv" -NoTypeInformation -Encoding UTF8
