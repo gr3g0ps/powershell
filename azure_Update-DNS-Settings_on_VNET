@@ -1,0 +1,113 @@
+# DNS replacement mapping
+$oldDNS = @("10.1.1.1", "10.1.1.2")
+$newDNS = @("10.9.9.9", "10.9.9.8")
+
+# Get all ENABLED subscriptions in the tenant
+$subscriptions = Get-AzSubscription | Where-Object { $_.State -eq "Enabled" }
+
+# Display numbered list of subscriptions
+Write-Host "`nAvailable Subscriptions:" -ForegroundColor Cyan
+$i = 1
+foreach ($sub in $subscriptions) {
+    Write-Host "  [$i] $($sub.Name) ($($sub.Id))"
+    $i++
+}
+
+# Prompt user to pick one or all
+Write-Host "`n  [0] ALL Subscriptions" -ForegroundColor Yellow
+$choice = Read-Host "`nEnter number"
+
+# Validate input
+if ($choice -match '^\d+$' -and [int]$choice -ge 0 -and [int]$choice -le $subscriptions.Count) {
+    if ($choice -eq "0") {
+        $selectedSubs = $subscriptions
+        Write-Host "`nRunning on ALL subscriptions...`n" -ForegroundColor Yellow
+    } else {
+        $selectedSubs = $subscriptions[[int]$choice - 1]
+        Write-Host "`nRunning on: $($selectedSubs.Name)`n" -ForegroundColor Green
+    }
+} else {
+    Write-Host "Invalid choice. Exiting." -ForegroundColor Red
+    exit
+}
+
+$results = @()
+
+foreach ($sub in $selectedSubs) {
+    Set-AzContext -SubscriptionId $sub.Id | Out-Null
+    $vnets = Get-AzVirtualNetwork
+
+    foreach ($vnet in $vnets) {
+        $currentDNS = $vnet.DhcpOptions.DnsServers
+
+        # ── Skip VNets using Azure Default DNS (no custom DNS set) ──
+        if ($currentDNS.Count -eq 0) {
+            Write-Host "Skipping VNet: $($vnet.Name) — Azure Default DNS, no changes needed" -ForegroundColor DarkGray
+            $results += [PSCustomObject]@{
+                SubscriptionName = $sub.Name
+                ResourceGroup    = $vnet.ResourceGroupName
+                VNetName         = $vnet.Name
+                Location         = $vnet.Location
+                OldDNS           = "Azure Default DNS"
+                NewDNS           = "No change"
+                Status           = "Skipped - Azure Default DNS"
+            }
+            continue
+        }
+
+        # ── Custom DNS: check if old entries exist ──
+        $hasOldDNS = $oldDNS | Where-Object { $currentDNS -contains $_ }
+
+        if ($hasOldDNS) {
+            Write-Host "Found old DNS on VNet: $($vnet.Name) [$($sub.Name)]" -ForegroundColor Yellow
+            Write-Host "  Current DNS : $($currentDNS -join ', ')"
+
+            # Replace old entries, preserve any other custom DNS
+            $updatedDNS = $currentDNS | Where-Object { $oldDNS -notcontains $_ }
+            $updatedDNS += $newDNS
+
+            # Apply the change
+            $vnet.DhcpOptions.DnsServers = $updatedDNS
+            $vnet | Set-AzVirtualNetwork | Out-Null
+
+            Write-Host "  Updated DNS : $($updatedDNS -join ', ')" -ForegroundColor Green
+            Write-Host "  Status      : Updated successfully`n" -ForegroundColor Green
+
+            $results += [PSCustomObject]@{
+                SubscriptionName = $sub.Name
+                ResourceGroup    = $vnet.ResourceGroupName
+                VNetName         = $vnet.Name
+                Location         = $vnet.Location
+                OldDNS           = $currentDNS -join ", "
+                NewDNS           = $updatedDNS -join ", "
+                Status           = "Updated"
+            }
+        } else {
+            # Custom DNS but no old entries — leave untouched
+            Write-Host "Skipping VNet: $($vnet.Name) — Custom DNS but no old entries found" -ForegroundColor DarkGray
+            $results += [PSCustomObject]@{
+                SubscriptionName = $sub.Name
+                ResourceGroup    = $vnet.ResourceGroupName
+                VNetName         = $vnet.Name
+                Location         = $vnet.Location
+                OldDNS           = $currentDNS -join ", "
+                NewDNS           = "No change"
+                Status           = "Skipped - No old DNS found"
+            }
+        }
+    }
+}
+
+# Summary
+Write-Host "`n===== SUMMARY =====" -ForegroundColor Cyan
+$results | Format-Table -AutoSize
+
+# Optional: Export to CSV
+$results | Export-Csv -Path ".\DNS_Update_Results.csv" -NoTypeInformation -Encoding UTF8
+
+
+#**Logic flow now:**
+#```
+#VNet DNS = Azure Default (empty)  →  Skipped - Azure Default DNS
+#VNet DNS = Custom + has old IPs   →  Updated
+#VNet DNS = Custom + no old IPs    →  Skipped - No old DNS found
