@@ -1,0 +1,47 @@
+
+DNS A Record Cleanup Script (PowerShell)
+
+A simple PowerShell utility to clean up stale DNS A records based on host validation results exported to CSV.
+
+This script reads a validation report, identifies hosts marked as unreachable (IsPingable=False), and automatically removes their corresponding A records from a specified Microsoft DNS Forward Lookup Zone.
+
+⚠️ Important
+Run this script only locally on the DNS Server
+Do NOT execute remotely
+Ensure you have proper administrative permissions before running
+Validate your CSV data before performing deletions
+Features
+Imports host validation results from CSV
+Filters unreachable hosts (IsPingable=False)
+Supports root records ((same as parent folder) → @)
+Removes matching DNS A records
+Displays progress and deletion count
+Requirements
+Windows Server with DNS Server role installed
+PowerShell with DNS Server module available
+Administrator privileges
+Configuration
+
+Update the following values before execution:
+
+$csvPath = "C:\Path\to\dns-validation-report.csv"
+$zone = "your-zone.com"
+CSV Example
+HostName,IsPingable
+server01,false
+server02,true
+(same as parent folder),false
+Usage
+Export or prepare the DNS validation CSV.
+Set the correct CSV path.
+Configure your DNS zone.
+Run the script directly on the DNS server.
+Example Output
+Rows with IsPingable=False: 12
+Removing A record: server01
+Removing A record: @
+Disclaimer
+
+This script permanently deletes DNS records using Remove-DnsServerResourceRecord -Force.
+
+Always test in a non-production environment first and keep DNS backups before execution.
